@@ -10,29 +10,40 @@ import TabContext from '@mui/lab/TabContext';
 import TabList from '@mui/lab/TabList';
 import TabPanel from '@mui/lab/TabPanel';
 import { HomePage } from "./home";
+import { SettingsPage } from "./settings";
+import { Repo } from "./lib/repo";
 
 const App = () => {
   const [value, setValue] = useState("1");
+  const [repos, setRepos] = useState([] as Array<Repo>);
 
   const handleChange = (event: React.SyntheticEvent, newValue: string) => {
     setValue(newValue);
   };
 
-  const store = ["laughing-happiness",
-    "account-documents-api",
-    "account-documents-service",
-    "account_balance_monitoring",
-    "adequate_crypto_address",
-    "college_savings_app",
-    "college_savings_portal",
-    "fundamerica.github.io",
-    "fundamerica_apps",
-    "fundamerica_chef",
-    "fundamerica_lookml",
-    "Optimus-Backend",
-    "optimus-FE",
-    "outertrust",
-    "platform-nestjs-authentication"];
+  chrome.storage.sync.set([{ name: "laughing-happiness", isEnabled: false, },
+  { name: "account-documents-api", isEnabled: false, },
+  { name: "account-documents-service", isEnabled: false, },
+  { name: "account_balance_monitoring", isEnabled: false, },
+  { name: "adequate_crypto_address", isEnabled: false, },
+  { name: "college_savings_app", isEnabled: false, },
+  { name: "college_savings_portal", isEnabled: false, },
+  { name: "fundamerica.github.io", isEnabled: false, },
+  { name: "fundamerica_apps", isEnabled: false, },
+  { name: "fundamerica_chef", isEnabled: false, },
+  { name: "fundamerica_lookml", isEnabled: false, },
+  { name: "Optimus-Backend", isEnabled: false, },
+  { name: "optimus-FE", isEnabled: false, },
+  { name: "outertrust", isEnabled: false, },
+  { name: "platform-nestjs-authentication", isEnabled: false, }]);
+
+  useEffect(() => {
+    (async () => {
+      chrome.storage.sync.get(['repos'], (items) => {
+        setRepos(items);
+      });
+    })();
+  }, []);
 
   return (
     <React.Fragment>
@@ -56,7 +67,7 @@ const App = () => {
             <HomePage repos={store}></HomePage>
           </TabPanel>
           <TabPanel value="2">
-            Settings
+            <SettingsPage repos={store}></SettingsPage>
           </TabPanel>
         </TabContext>
       </Box>
