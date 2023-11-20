@@ -17,12 +17,13 @@ body {
 	margin: 0;
 }
 
-.root {
-	max-height: 500px;
+#root {
+	height: 350px;
+	width: 750px;
 }
 
 .wrapper {
-	height: 100vh;
+	height: 100%;
 	width: 100%;
 	overflow: auto;
 }

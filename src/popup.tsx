@@ -10,12 +10,11 @@ import TabList from '@mui/lab/TabList';
 import TabPanel from '@mui/lab/TabPanel';
 import { HomePage } from "./components/home";
 import { SettingsPage } from "./components/settings";
-import { RepoSchema } from "./lib/models/repo";
-import { ReposProvider } from "./components/ReposContext";
+import { ReposProvider, useRepos } from "./components/ReposContext";
+import { ConfigsRepo } from "./components/ConfigurationContext";
 
 const App = () => {
   const [value, setValue] = useState("1");
-  // const [repos, setRepos] = useState<Repo[]>([]);
 
   const handleChange = (event: React.SyntheticEvent, newValue: string) => {
     setValue(newValue);
@@ -45,25 +44,27 @@ const App = () => {
 
   return (
     <React.Fragment>
-      <ReposProvider>
-        <Box sx={{ width: '100%', typography: 'body1' }}>
-          <CssBaseline />
-          <TabContext value={value}>
-            <Box sx={{ borderBottom: 1, borderColor: 'divider' }}>
-              <TabList onChange={handleChange} aria-label="Github Extension Tabs" centered>
-                <Tab icon={<Home />} aria-label="home" value="1" />
-                <Tab icon={<Settings />} aria-label="settings" value="2" />
-              </TabList>
-            </Box>
-            <TabPanel value="1">
-              <HomePage></HomePage>
-            </TabPanel>
-            <TabPanel value="2">
-              <SettingsPage ></SettingsPage>
-            </TabPanel>
-          </TabContext>
-        </Box>
-      </ReposProvider>
+      <ConfigsRepo>
+        <ReposProvider>
+          <Box sx={{ width: '100%', height: '100%', typography: 'body1' }}>
+            <CssBaseline />
+            <TabContext value={value}>
+              <Box sx={{ borderBottom: 1, borderColor: 'divider' }}>
+                <TabList onChange={handleChange} aria-label="Github Extension Tabs" centered>
+                  <Tab icon={<Home />} aria-label="home" value="1" />
+                  <Tab icon={<Settings />} aria-label="settings" value="2" />
+                </TabList>
+              </Box>
+              <TabPanel sx={{ width: 'calc(100% - 24px)', height: 'calc(100% - 49px)' }} value="1">
+                <HomePage></HomePage>
+              </TabPanel>
+              <TabPanel sx={{ width: 'calc(100% - 24px)', height: 'calc(100% - 49px)' }} value="2">
+                <SettingsPage ></SettingsPage>
+              </TabPanel>
+            </TabContext>
+          </Box>
+        </ReposProvider>
+      </ConfigsRepo>
     </React.Fragment>
   );
 };
