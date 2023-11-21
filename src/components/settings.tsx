@@ -217,7 +217,7 @@ export const SettingsPage: FC = () => {
 					{repoError && <div style={{ color: 'red' }}>{repoError}</div>}
 					<Button disabled={loading} variant="outlined" onClick={async () => await handleFetch()}>Fetch</Button>
 					<TableContainer component={Paper}>
-						<Table sx={{ minWidth: 250 }} aria-label="Repo Configuration Table">
+						<Table sx={{ minWidth: 250 }} size="small" aria-label="Repo Configuration Table">
 							<TableHead>
 								<TableRow>
 									<TableCell>Name</TableCell>
