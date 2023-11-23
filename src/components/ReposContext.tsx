@@ -1,5 +1,5 @@
-import { Dispatch, createContext, useContext, useReducer, FC, ReactNode } from 'react';
-import { RepoSchema } from '../lib/models/repo';
+import { Dispatch, createContext, useContext, useReducer, FC, ReactNode, useEffect } from 'react';
+import { Repo, RepoSchema } from '../lib/models/repo';
 
 type ReposDispatch = {
   type: string;
@@ -12,15 +12,21 @@ const ReposDispatchContext = createContext<Dispatch<ReposDispatch> | null>(null)
 
 export const ReposProvider: FC<{ children: ReactNode }> = ({ children }) => {
   let initial: Array<RepoSchema> = [];
-  if (chrome.storage) {
-    chrome.storage.sync.get(['repos'], (storage) => {
-      initial = storage.repos as RepoSchema[];
-    });
-  }
   const [repos, dispatch] = useReducer(
     reposReducer,
     initial
   );
+
+  useEffect(() => {
+    if (chrome.storage) {
+      chrome.storage.sync.get(['repos']).then((result) => {
+        if (result.repos) {
+          dispatch({ type: 'add', repos: result.repos.map((m: any) => new Repo(m)) });
+        }
+      })
+    }
+  }, []);
+
 
   return (
     <ReposContext.Provider value={repos}>
@@ -62,7 +68,7 @@ function reposReducer(repos: Array<RepoSchema>, action: ReposDispatch) {
         });
     }
     case 'delete': {
-      return repos.filter(repo => action.repos.findIndex((f) => f.id == repo.id) == -1);;
+      return repos.filter(repo => action.repos.findIndex((f) => f.id == repo.id) == -1);
     }
     default: {
       throw Error('Unknown action: ' + action.type);

@@ -1,11 +1,18 @@
-import { Dispatch, createContext, useContext, useReducer, FC, ReactNode } from 'react';
+import { Dispatch, createContext, useContext, useReducer, FC, ReactNode, useEffect } from 'react';
 import { ConfigSchema, keyOfConfig } from '../lib/models/configuration';
 
-type ConfigDispatch = {
+type singleDispatch = {
   type: string;
   field: keyof ConfigSchema;
   value: ConfigSchema[keyof ConfigSchema];
 }
+
+type multiDispatch = {
+  type: string;
+  configs: ConfigSchema
+}
+
+type ConfigDispatch = singleDispatch | multiDispatch;
 
 const ConfigurationContext = createContext<ConfigSchema | null>(null);
 
@@ -16,15 +23,20 @@ export const ConfigsRepo: FC<{ children: ReactNode }> = ({ children }) => {
     personal_access_token: undefined,
     has_assigned: undefined
   };
-  if (chrome.storage) {
-    chrome.storage.sync.get(['configs'], (storage) => {
-      initial = storage.repos as ConfigSchema;
-    });
-  }
   const [configs, dispatch] = useReducer(
     configurationReducer,
     initial
   );
+  useEffect(() => {
+    if (chrome.storage) {
+      chrome.storage.sync.get(['configs']).then((storage) => {
+        initial = storage.configs as ConfigSchema;
+        if (storage.configs) {
+          dispatch({ type: 'add', configs: storage.configs });
+        }
+      });
+    }
+  }, []);
 
   return (
     <ConfigurationContext.Provider value={configs}>
@@ -43,6 +55,13 @@ export function useConfigurationDispatch() {
   return useContext(ConfigurationDispatchContext);
 }
 
+function isSingle(obj: any): obj is singleDispatch {
+  return obj.field !== undefined;
+}
+function isFull(obj: any): obj is multiDispatch {
+  return obj.configs !== undefined;
+}
+
 function setObjKeyValue<KeyType extends keyof ConfigSchema>(configs: ConfigSchema, key: KeyType, value: ConfigSchema[KeyType]) {
   configs[key] = value;
   return configs;
@@ -51,20 +70,26 @@ function setObjKeyValue<KeyType extends keyof ConfigSchema>(configs: ConfigSchem
 function configurationReducer(configs: ConfigSchema, action: ConfigDispatch) {
   switch (action.type) {
     case 'add': {
-      if (!configs[action.field]) {
-        return { ...setObjKeyValue({ ...configs }, action.field, action.value) };
+      if (isSingle(action)) {
+        if (!configs[action.field]) {
+          return { ...setObjKeyValue({ ...configs }, action.field, action.value) };
+        }
+      }
+
+      if (isFull(action)) {
+        return { ...action.configs };
       }
 
       return configs;
     }
     case 'update': {
-      if (configs[action.field]) {
+      if (isSingle(action) && configs[action.field]) {
         return { ...setObjKeyValue({ ...configs }, action.field, action.value) };
       }
       return configs;
     }
     case 'delete': {
-      if (configs[action.field]) {
+      if (isSingle(action) && configs[action.field]) {
         return { ...setObjKeyValue({ ...configs }, action.field, undefined) };
       }
       return configs;

@@ -55,7 +55,6 @@ export const SettingsPage: FC = () => {
 		return (...args: Parameters<F>): void => {
 			clearTimeout(timeout);
 			timeout = setTimeout(() => {
-				console.log('debounce')
 				func(...args)
 			}, waitFor);
 		};
@@ -70,8 +69,18 @@ export const SettingsPage: FC = () => {
 	}
 
 	useEffect(() => {
-		setStorage({ 'configs': configs });
-		setStorage({ 'repos': repos });
+		function checkConfig(configs: any) {
+			return Object.values(configs).some(val => val !== undefined);
+		}
+
+		if (repos && repos.length > 0) {
+			setStorage({ 'repos': repos });
+		}
+
+		if (configs && checkConfig(configs)) {
+			setStorage({ 'configs': configs });
+		}
+
 	}, [repos, configs])
 
 	const handleConfig = async (action: 'update' | 'add' | 'delete', field: any, value: any) => {
