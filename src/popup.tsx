@@ -1,24 +1,31 @@
-import React, { createContext, useEffect, useState } from "react";
+import React, { useState } from "react";
 import { createRoot } from "react-dom/client";
 import "./style.css";
 import CssBaseline from "@mui/material/CssBaseline";
 import Box from "@mui/material/Box";
 import { Home, Settings } from '@mui/icons-material'
-import Tab from "@mui/material/Tab";
-import TabContext from '@mui/lab/TabContext';
-import TabList from '@mui/lab/TabList';
-import TabPanel from '@mui/lab/TabPanel';
 import { HomePage } from "./components/home";
 import { SettingsPage } from "./components/settings";
-import { ReposProvider, useRepos } from "./components/ReposContext";
+import { ReposProvider } from "./components/ReposContext";
 import { ConfigsRepo } from "./components/ConfigurationContext";
+import Drawer from "@mui/material/Drawer";
+import List from "@mui/material/List";
+import ListItem from "@mui/material/ListItem";
+import ListItemButton from "@mui/material/ListItemButton";
+import ListItemIcon from "@mui/material/ListItemIcon";
+import ListItemText from "@mui/material/ListItemText";
 
 const App = () => {
-  const [value, setValue] = useState("1");
+  const [value, setValue] = useState(0);
 
-  const handleChange = (event: React.SyntheticEvent, newValue: string) => {
+  const handleChange = (event: React.SyntheticEvent, newValue: number) => {
     setValue(newValue);
   };
+
+  const options = [
+    { text: 'Home', icon: <Home /> },
+    { text: 'Settings', icon: <Settings /> }
+  ]
 
   const clearStorage = () => {
     if (chrome.storage) {
@@ -46,22 +53,34 @@ const App = () => {
     <React.Fragment>
       <ConfigsRepo>
         <ReposProvider>
-          <Box sx={{ width: '100%', height: '100%', typography: 'body1' }}>
+          <Box sx={{ display: 'flex', width: '100%', height: '100%', typography: 'body1' }}>
             <CssBaseline />
-            <TabContext value={value}>
-              <Box sx={{ borderBottom: 1, borderColor: 'divider' }}>
-                <TabList onChange={handleChange} aria-label="Github Extension Tabs" centered>
-                  <Tab icon={<Home />} aria-label="home" value="1" />
-                  <Tab icon={<Settings />} aria-label="settings" value="2" />
-                </TabList>
+            <Drawer
+              variant="permanent"
+              sx={{
+                width: 150,
+                flexShrink: 0,
+                [`& .MuiDrawer-paper`]: { width: 150, boxSizing: 'border-box' },
+              }}
+            >
+              <Box sx={{ overflow: 'auto' }}>
+                <List>
+                  {options.map((item, index) => (
+                    <ListItem key={item.text} disablePadding onClick={(e) => handleChange(e, index)}>
+                      <ListItemButton>
+                        <ListItemIcon>
+                          {item.icon}
+                        </ListItemIcon>
+                        <ListItemText primary={item.text} />
+                      </ListItemButton>
+                    </ListItem>
+                  ))}
+                </List>
               </Box>
-              <TabPanel sx={{ width: 'calc(100% - 24px)', height: 'calc(100% - 49px)' }} value="1">
-                <HomePage></HomePage>
-              </TabPanel>
-              <TabPanel sx={{ width: 'calc(100% - 24px)', height: 'calc(100% - 49px)' }} value="2">
-                <SettingsPage ></SettingsPage>
-              </TabPanel>
-            </TabContext>
+            </Drawer>
+            <Box component="main" className="main-content" sx={{ flexGrow: 1, p: 1 }}>
+              {(value == 0) ? <HomePage></HomePage> : <SettingsPage></SettingsPage>}
+            </Box>
           </Box>
         </ReposProvider>
       </ConfigsRepo>
