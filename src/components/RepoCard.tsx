@@ -4,6 +4,7 @@ import CardContent from "@mui/material/CardContent";
 import useFetch from "../hooks/useFetch";
 import { GithubService } from "../lib/services/github";
 import { useConfiguration } from "./ConfigurationContext";
+import API from "../lib/services/api";
 
 type pullRequestResult = Array<{ pr_number: number, comments: number, update_at: Date, link: string }>;
 
@@ -17,8 +18,8 @@ export const RepoCard: FC<{ name: string }> = ({ name }) => {
 
 	useEffect(() => {
 		let ignore = false;
-		setLoading(true)
-		service.getPullRequests(name)
+		setLoading(true);
+		API.queue(() => service.getPullRequests(name))
 			.then((res: any) => {
 				if (res && !ignore) {
 					const response = res;
