@@ -133,7 +133,7 @@ const App = () => {
                 }, [] as JSX.Element[])}
               </List>
             </Drawer>
-            <Box component="main" className="main-content" sx={{ flexGrow: 1, p: 1 }}>
+            <Box component="main" className="main-content" sx={{ flexGrow: 1, p: 1, height: "calc(100% - 35px)", overflow: "auto" }}>
               {renderMain(value)}
             </Box>
           </Box>

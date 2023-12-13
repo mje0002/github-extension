@@ -17,7 +17,7 @@ export class Repo implements RepoSchema {
 		this.id = data.id ?? this.randomId();
 		this.name = data.name ?? '';
 		this.full_name = data.full_name ?? '';
-		this.url = data.url ?? '';
+		this.url = data.html_url ?? '';
 		this.open_issues = data.open_issues ?? 0;
 		this.open_issues_count = data.open_issues_count ?? 0;
 		this.isEnabled = data.isEnabled ?? false;
