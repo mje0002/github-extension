@@ -16,7 +16,6 @@ export class GithubService {
 			'/user/repos',
 			this.processRepos.bind(this),
 		);
-
 		return this._repos;
 	}
 	/**
@@ -33,10 +32,11 @@ export class GithubService {
 		await this.processPagedData(url, (data: any) => {
 			const parsedData: any[] = data.items ?? [];
 			result = parsedData.reduce((prev, curr) => {
+				console.log("Current Pull", curr);
 				prev.push({
 					pr_number: curr.number,
 					comments: curr.comments,
-					update_at: curr.update_at,
+					update_at: curr.updated_at,
 					link: curr.html_url
 				});
 				return prev;

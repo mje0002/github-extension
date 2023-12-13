@@ -85,7 +85,7 @@ export const ReposPage: FC = () => {
 				<TableCell component="th" scope="row">
 					<Checkbox checked={repo.isEnabled} onClick={() => {
 						if (loading) return;
-						repo.isEnabled = true;
+						repo.isEnabled = !repo.isEnabled;
 						if (dispatch) dispatch({ type: 'update', repos: [repo] });
 					}}></Checkbox>
 				</TableCell>
