@@ -1,4 +1,5 @@
 import { Octokit } from 'octokit';
+import * as OctokitTypes from "@octokit/types";
 import { UserRepo } from '../models/github/UserRepo';
 
 export class GithubService {
@@ -76,7 +77,9 @@ export class GithubService {
 		processData: (data: any) => void,
 	) {
 		let morePages = true;
+		let delay = 0;
 		while (morePages) {
+			if (delay > 0) await this.delayAPI(delay);
 			const response = await this._octo.request({
 				method: 'GET',
 				url: url,
@@ -88,13 +91,60 @@ export class GithubService {
 			processData(response.data);
 
 			const linkHeader = response.headers.link;
+			delay = this.getBackOff(response.headers);
+			url = this.getNextPage(linkHeader);
+			morePages = url != '';
+		}
+	}
 
-			morePages = !!(linkHeader && linkHeader.includes(`rel=\"next\"`));
+	private delayAPI(delay: number = 0) {
+		return new Promise((resolve, reject) => {
+			setTimeout(() => {
+				resolve(true);
+			}, delay);
+		})
+	}
 
-			if (morePages && linkHeader) {
-				const i = linkHeader.match(this.nexRegex);
-				url = i ? i[0] : '';
+	private getNextPage(linkHeader: string | undefined) {
+		let url = '';
+		const hasNext = !!(linkHeader && linkHeader.includes(`rel=\"next\"`));
+
+		if (hasNext && linkHeader) {
+			const i = linkHeader.match(this.nexRegex);
+			url = i ? i[0] : '';
+		}
+
+		return url;
+	}
+
+	private getBackOff(headers: OctokitTypes.ResponseHeaders) {
+		/*
+		if x-ratelimit-remaining == 0 Then Pull value from x-ratelimit-reset and set timeout for next call to wait till after time
+		if retry-after is present then use value retry-after and set timeout for next call to wait till after time
+
+		if either is true return correct value for hold pattern!
+		*/
+		console.log('Hitting back off check', headers)
+		let backoff = 0;
+
+		if (headers['x-ratelimit-remaining'] && headers['x-ratelimit-remaining'] == '0') {
+			//utc epoch seconds
+			//convert seconds to time subtract NOW - minus SECONDS return value
+			const reset = headers['x-ratelimit-reset'] ?? '0';
+			if (!isNaN(reset as unknown as number) && reset != '0') {
+				var d = new Date(0); // The 0 there is the key, which sets the date to the epoch
+				d.setUTCSeconds(parseInt(reset));
+				backoff = d.getUTCSeconds() - new Date().getUTCSeconds();
 			}
 		}
+
+		if (headers['retry-after']) {
+			const retryAfter = headers['retry-after'];
+			if (!isNaN(retryAfter as number)) {
+				backoff = parseInt(headers['retry-after'].toString());
+			}
+		}
+
+		return backoff * 1000;
 	}
 }
