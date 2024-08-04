@@ -106,7 +106,7 @@ const App = () => {
                         </ListItemButton>
                       </ListItem>;
                     });
-                    const set = <Collapse in={toggled[curr.text.toLowerCase()]} timeout="auto" unmountOnExit>
+                    const set = <Collapse key={curr.text.toLowerCase()} in={toggled[curr.text.toLowerCase()]} timeout="auto" unmountOnExit>
                       <List component="div" disablePadding sx={{
                         bgcolor: 'rgba(239, 239, 240, 0.5)'
                       }}>
