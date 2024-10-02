@@ -1,19 +1,15 @@
 import { FC, useEffect, useState } from "react";
 import "../style.css";
 import CardContent from "@mui/material/CardContent";
-import useFetch from "../hooks/useFetch";
 import { GithubService } from "../lib/services/github";
 import { useConfiguration } from "./ConfigurationContext";
 import API from "../lib/services/api";
 import { RepoSchema } from "../lib/models/repo";
 import Link from "@mui/material/Link";
-import { ExpandMore, Update } from "@mui/icons-material";
-import Accordion from "@mui/material/Accordion";
-import AccordionSummary from "@mui/material/AccordionSummary";
-import AccordionDetails from "@mui/material/AccordionDetails";
-import { PullRequest } from "./PullRequet";
+import { PullRequestWrapper } from "./PullRequestWrapper";
 
-type pullRequestResult = Array<{ pr_number: number, comments: number, update_at: Date, link: string }>;
+export type basePullRequest = { pr_number: number, comments: number, update_at: Date, link: string, created_at: Date };
+export type pullRequestResult = Array<basePullRequest>;
 
 export const RepoCard: FC<{ repo: RepoSchema }> = ({ repo }) => {
 	const configs = useConfiguration();
@@ -29,18 +25,17 @@ export const RepoCard: FC<{ repo: RepoSchema }> = ({ repo }) => {
 		API.queue(() => service.getPullRequests(repo.full_name))
 			.then((res: any) => {
 				if (res && !ignore) {
-					const response = res;
-					setResponse(response);
+					setResponse(res);
 				}
-				setLoading(false);
 			})
 			.catch((e) => {
 				console.log(e);
 				if (e instanceof Error) {
 					setHasError({ message: e.message });
 				}
+			}).finally(() => {
 				setLoading(false);
-			})
+			});
 		return () => {
 			ignore = true;
 		}
@@ -49,7 +44,10 @@ export const RepoCard: FC<{ repo: RepoSchema }> = ({ repo }) => {
 
 
 	return (
-		<CardContent sx={{ padding: '8px', paddingBottom: '16px' }}>
+		<CardContent sx={[
+			{ padding: '8px', paddingBottom: '8px' },
+			{ "&:last-child": { paddingBottom: '8px' } }
+		]}>
 			{
 				loading ? <div>Loading...</div> :
 					(
@@ -59,7 +57,7 @@ export const RepoCard: FC<{ repo: RepoSchema }> = ({ repo }) => {
 									<div className="repo-name">
 										<Link
 											component="button"
-											variant="h6"
+											variant="body1"
 											onClick={() => {
 												if (chrome.tabs) {
 													chrome.tabs.create({ url: `${repo.url}/pulls` })
@@ -71,23 +69,7 @@ export const RepoCard: FC<{ repo: RepoSchema }> = ({ repo }) => {
 											{repo.full_name}
 										</Link>
 									</div>
-									<div className="pull-request">
-										<Accordion disableGutters square sx={{ backgroundColor: 'inherit', boxShadow: 'none' }}>
-											<AccordionSummary
-												sx={{ minHeight: 'fit-content', margin: '0px' }}
-												expandIcon={<ExpandMore />}
-												aria-controls="panel1a-content"
-												id="panel1a-header"
-											>
-												<span>Open {response?.length ?? 0} </span>
-											</AccordionSummary>
-											<AccordionDetails>
-												<ul style={{ margin: '0px', padding: '0px', paddingLeft: '8px', fontSize: 'small' }}>
-													{response?.map((pull) => <PullRequest pr={pull}></PullRequest>)}
-												</ul>
-											</AccordionDetails>
-										</Accordion>
-									</div>
+									<PullRequestWrapper response={response} />
 								</>
 							)
 					)
