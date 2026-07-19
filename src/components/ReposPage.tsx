@@ -1,7 +1,7 @@
 import { FC, useEffect, useState } from "react";
 import "../style.css";
 import Paper from "@mui/material/Paper";
-import { TableContainer, Table, TableHead, TableRow, TableCell, TableBody, Button } from "@mui/material";
+import { TableContainer, Table, TableHead, TableRow, TableCell, TableBody, Button, Stack, Typography, Box } from "@mui/material";
 import { Repo } from "../lib/models/repo";
 import { Checkbox } from "@mui/material";
 import { GithubService } from "../lib/services/github";
@@ -51,24 +51,33 @@ export const ReposPage: FC = () => {
 		if (loading) return;
 		setLoading(true);
 		try {
-			if (!configs || !configs.personal_access_token) {
-				throw new Error('Access Token Required');
-			}
-			const githubService = new GithubService(configs.personal_access_token);
-			const result = await githubService.getRepos();
-			if (dispatch) {
-				dispatch({ type: 'add', repos: result.map((m) => new Repo(m)) });
-				modifyErrorState(null, 'repo');
-			}
-		} catch (error) {
-			if (error instanceof Error) {
-				modifyErrorState(error.message, 'repo')
-			}
+			const tokens = configs?.tokens ?? [];
+			if (tokens.length === 0) throw new Error('At least one Access Token is required');
 
+			const errors: string[] = [];
+			const allRepos: Repo[] = [];
+
+			await Promise.all(tokens.map(async (pat) => {
+				try {
+					const githubService = new GithubService(pat.token);
+					const result = await githubService.getRepos();
+					result.forEach(r => allRepos.push(new Repo({ ...r, pat_id: pat.id, platform: pat.platform })));
+				} catch (e) {
+					errors.push(`[${pat.label}]: ${e instanceof Error ? e.message : String(e)}`);
+				}
+			}));
+
+			if (dispatch) {
+				dispatch({ type: 'add', repos: allRepos });
+			}
+			if (errors.length > 0) modifyErrorState(errors.join(' | '), 'repo');
+			else modifyErrorState(null, 'repo');
+		} catch (error) {
+			if (error instanceof Error) modifyErrorState(error.message, 'repo');
 		} finally {
 			setLoading(false);
 		}
-	}
+	};
 
 	let listItems: (JSX.Element | undefined)[] = [];
 
@@ -81,6 +90,9 @@ export const ReposPage: FC = () => {
 			>
 				<TableCell component="th" scope="row">
 					{repo.name}
+				</TableCell>
+				<TableCell component="th" scope="row">
+					{configs?.tokens?.find(t => t.id === repo.pat_id)?.label ?? '—'}
 				</TableCell>
 				<TableCell component="th" scope="row">
 					<Checkbox checked={repo.isEnabled} onClick={() => {
@@ -97,13 +109,24 @@ export const ReposPage: FC = () => {
 		<>
 			{/* {Needs validation needs error handling} */}
 			{repoError && <div style={{ color: 'red' }}>{repoError}</div>}
-			<Button disabled={loading} variant="outlined" onClick={async () => await handleFetch()}>Fetch</Button>
-			<TableContainer component={Paper}>
+			<Box sx={{ p: 0 }}>
+				<Stack
+					direction="row"
+					sx={{ justifyContent: 'space-between', alignItems: 'center' }}
+				>
+					<Typography gutterBottom variant="h5" component="div">
+						Repos' Configuration
+					</Typography>
+					<Button disabled={loading} variant="outlined" onClick={async () => await handleFetch()}>Fetch</Button>
+				</Stack>
+			</Box>
+			<TableContainer component={Paper} sx={{ overflow: "auto", height: "calc(100% - 35px)" }}>
 				<Table sx={{ minWidth: 250 }} size="small" aria-label="Repo Configuration Table">
 					<TableHead>
 						<TableRow>
 							<TableCell>Name</TableCell>
-							<TableCell align="right">Enabled</TableCell>
+							<TableCell align="left">Token</TableCell>
+							<TableCell align="left">Enabled</TableCell>
 						</TableRow>
 					</TableHead>
 					<TableBody>

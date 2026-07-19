@@ -1,38 +1,43 @@
 import { Dispatch, createContext, useContext, useReducer, FC, ReactNode, useEffect } from 'react';
-import { ConfigSchema, keyOfConfig } from '../lib/models/configuration';
+import { ConfigSchema } from '../lib/models/configuration';
+import { PATEntry } from '../lib/models/pat-entry';
 
-type singleDispatch = {
-  type: string;
-  field: keyof ConfigSchema;
-  value: ConfigSchema[keyof ConfigSchema];
-}
+type LoadAction        = { type: 'load';         configs: ConfigSchema }
+type AddTokenAction    = { type: 'add-token';    token: PATEntry }
+type UpdateTokenAction = { type: 'update-token'; token: PATEntry }
+type DeleteTokenAction = { type: 'delete-token'; id: string }
 
-type multiDispatch = {
-  type: string;
-  configs: ConfigSchema
-}
-
-type ConfigDispatch = singleDispatch | multiDispatch;
+type ConfigDispatch = LoadAction | AddTokenAction | UpdateTokenAction | DeleteTokenAction;
 
 const ConfigurationContext = createContext<ConfigSchema | null>(null);
-
 const ConfigurationDispatchContext = createContext<Dispatch<ConfigDispatch> | null>(null);
 
+const initial: ConfigSchema = { tokens: [] };
+
 export const ConfigsRepo: FC<{ children: ReactNode }> = ({ children }) => {
-  let initial: ConfigSchema = {
-    personal_access_token: undefined,
-    has_assigned: undefined
-  };
-  const [configs, dispatch] = useReducer(
-    configurationReducer,
-    initial
-  );
+  const [configs, dispatch] = useReducer(configurationReducer, initial);
+
   useEffect(() => {
     if (chrome.storage) {
       chrome.storage.sync.get(['configs']).then((storage) => {
-        initial = storage.configs as ConfigSchema;
-        if (storage.configs) {
-          dispatch({ type: 'add', configs: storage.configs });
+        const stored = storage.configs as any;
+        if (!stored) return;
+
+        // Migration: legacy single personal_access_token → tokens array
+        if (stored.personal_access_token && (!stored.tokens || stored.tokens.length === 0)) {
+          dispatch({
+            type: 'load',
+            configs: {
+              tokens: [{
+                id: crypto.randomUUID(),
+                label: 'Default',
+                platform: 'github',
+                token: stored.personal_access_token,
+              }],
+            },
+          });
+        } else {
+          dispatch({ type: 'load', configs: stored as ConfigSchema });
         }
       });
     }
@@ -55,47 +60,18 @@ export function useConfigurationDispatch() {
   return useContext(ConfigurationDispatchContext);
 }
 
-function isSingle(obj: any): obj is singleDispatch {
-  return obj.field !== undefined;
-}
-function isFull(obj: any): obj is multiDispatch {
-  return obj.configs !== undefined;
-}
-
-function setObjKeyValue<KeyType extends keyof ConfigSchema>(configs: ConfigSchema, key: KeyType, value: ConfigSchema[KeyType]) {
-  configs[key] = value;
-  return configs;
-}
-
-function configurationReducer(configs: ConfigSchema, action: ConfigDispatch) {
+function configurationReducer(configs: ConfigSchema, action: ConfigDispatch): ConfigSchema {
   switch (action.type) {
-    case 'add': {
-      if (isSingle(action)) {
-        if (!configs[action.field]) {
-          return { ...setObjKeyValue({ ...configs }, action.field, action.value) };
-        }
-      }
-
-      if (isFull(action)) {
-        return { ...action.configs };
-      }
-
-      return configs;
-    }
-    case 'update': {
-      if (isSingle(action) && configs[action.field]) {
-        return { ...setObjKeyValue({ ...configs }, action.field, action.value) };
-      }
-      return configs;
-    }
-    case 'delete': {
-      if (isSingle(action) && configs[action.field]) {
-        return { ...setObjKeyValue({ ...configs }, action.field, undefined) };
-      }
-      return configs;
-    }
-    default: {
-      throw Error('Unknown action: ' + action.type);
-    }
+    case 'load':
+      return { tokens: action.configs.tokens ?? [] };
+    case 'add-token':
+      return { ...configs, tokens: [...configs.tokens, action.token] };
+    case 'update-token':
+      return { ...configs, tokens: configs.tokens.map(t => t.id === action.token.id ? action.token : t) };
+    case 'delete-token':
+      return { ...configs, tokens: configs.tokens.filter(t => t.id !== action.id) };
+    default:
+      throw Error('Unknown action: ' + (action as any).type);
   }
 }
+

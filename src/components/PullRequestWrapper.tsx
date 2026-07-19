@@ -27,7 +27,7 @@ export const PullRequestWrapper: FC<{ response: pullRequestResult | null }> = ({
 					<span>Open {response?.length ?? 0} </span>
 				</AccordionSummary>
 				<AccordionDetails sx={{ padding: '0px' }}>
-					<ul style={{ margin: '0px', padding: '0px', paddingLeft: '8px', fontSize: 'small' }}>
+					<ul style={{ margin: '0px', padding: '0px', paddingLeft: '8px', fontSize: 'small', maxHeight: '180px', overflowY: 'auto' }}>
 						{
 							response?.map(
 								(pull) => <PullRequest key={pull.pr_number} pr={pull}></PullRequest>
