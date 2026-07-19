@@ -2,7 +2,8 @@ type PromiseItem = { func: (...args: any[]) => Promise<any>, args: any[], resolv
 
 export default class API {
 	static current: Array<PromiseItem> = [];
-	static pending = false;
+	static activeCount = 0;
+	static readonly MAX_CONCURRENT = 5;
 
 	static async queue(func: (...args: any[]) => Promise<any>, ...args: any[]) {
 		return new Promise((resolve, reject) => {
@@ -12,33 +13,26 @@ export default class API {
 	}
 
 	static dequeue() {
-		if (API.pending) {
-			return false;
+		while (API.activeCount < API.MAX_CONCURRENT) {
+			const item = API.current.shift();
+			if (!item) break;
+
+			try {
+				API.activeCount++;
+				item.func(...item.args)
+					.then((result) => {
+						API.handlePromise(item, true, result);
+					}).catch((error) => {
+						API.handlePromise(item, false, error);
+					});
+			} catch (error) {
+				API.handlePromise(item, false, error);
+			}
 		}
-
-		const item = API.current.shift();
-
-		if (!item) {
-			return false;
-		}
-		try {
-			API.pending = true;
-			item.func(...item.args)
-				.then((result) => {
-					API.handlePromise(item, true, result);
-				}).catch((error) => {
-					API.handlePromise(item, false, error);
-				});
-		} catch (error) {
-			API.handlePromise(item, false, error);
-		}
-
-
-		return true;
 	}
 
 	static handlePromise(item: PromiseItem, resolve: boolean = false, value: any) {
-		API.pending = false;
+		API.activeCount--;
 		if (resolve) {
 			item.resolve(value);
 		} else {
