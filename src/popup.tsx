@@ -16,6 +16,8 @@ import Drawer from '@mui/material/Drawer';
 import { Collapse } from "@mui/material";
 import { Configuration } from "./components/Configuration";
 import { ReposPage } from "./components/ReposPage";
+import { ThemeProvider } from "@mui/material";
+import { theTheme } from "./theme"
 
 const App = () => {
   const [value, setValue] = useState(0);
@@ -133,7 +135,7 @@ const App = () => {
                 }, [] as JSX.Element[])}
               </List>
             </Drawer>
-            <Box component="main" className="main-content" sx={{ flexGrow: 1, p: 1, height: "calc(100% - 35px)", overflow: "auto" }}>
+            <Box component="main" className="main-content" sx={{ flexGrow: 1, p: 1, height: "100%", overflow: "auto" }}>
               {renderMain(value)}
             </Box>
           </Box>
@@ -146,7 +148,7 @@ const App = () => {
 const root = createRoot(document.getElementById("root")!);
 
 root.render(
-  <React.StrictMode>
+  <ThemeProvider theme={theTheme}>
     <App />
-  </React.StrictMode>
+  </ThemeProvider>
 );

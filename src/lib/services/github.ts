@@ -24,18 +24,44 @@ export class GithubService {
 	 * @param start
 	 * @param end
 	 */
+	async getAllRepoPullRequests(repos: string[]): Promise<Record<string, Array<{ pr_number: number, title: string, comments: number, update_at: Date, link: string, created_at: Date }>>> {
+		const repoClauses = repos.map(r => `repo:${r}`).join(' ');
+		const q = encodeURIComponent(`is:pr state:open ${repoClauses}`);
+		const resultMap: Record<string, Array<any>> = {};
+		repos.forEach(r => { resultMap[r] = []; });
+
+		await this.processPagedData(`/search/issues?q=${q}`, (data: any) => {
+			const items: any[] = data.items ?? [];
+			items.forEach(curr => {
+				const repoName = curr.repository_url.replace('https://api.github.com/repos/', '');
+				if (resultMap[repoName]) {
+					resultMap[repoName].push({
+						pr_number: curr.number,
+						title: curr.title,
+						comments: curr.comments,
+						update_at: curr.updated_at,
+						link: curr.html_url,
+						created_at: curr.created_at,
+					});
+				}
+			});
+		});
+
+		return resultMap;
+	}
+
 	async getPullRequests(repo: string) {
 		const q = encodeURIComponent(
 			`is:pr state:open repo:${repo}`,
 		);
-		let result: Array<{ pr_number: number, comments: number, update_at: Date, link: string, created_at: Date }> = [];
+		let result: Array<{ pr_number: number, title: string, comments: number, update_at: Date, link: string, created_at: Date }> = [];
 		const url = `/search/issues?q=${q}`;
 		await this.processPagedData(url, (data: any) => {
 			const parsedData: any[] = data.items ?? [];
 			result = parsedData.reduce((prev, curr) => {
-				console.log("Current Pull", curr.number, curr);
 				prev.push({
 					pr_number: curr.number,
+					title: curr.title,
 					comments: curr.comments,
 					update_at: curr.updated_at,
 					link: curr.html_url,
@@ -46,19 +72,6 @@ export class GithubService {
 		});
 
 		return result;
-	}
-
-	protected processPullRequests(data: any) {
-		const parsedData: any[] = data.items ?? [];
-		let result = parsedData.reduce((prev, curr) => {
-			prev.push({
-				pr_number: curr.number,
-				comments: curr.comments,
-				update_at: curr.update_at,
-				link: curr.html_url
-			});
-			return prev;
-		}, [])
 	}
 
 	protected processRepos(data: any) {

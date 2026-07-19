@@ -20,10 +20,11 @@ export const PullRequest: FC<{ pr: basePullRequest }> = ({ pr }) => {
 	}).format(new Date(pr.created_at));
 
 	return (
-		<li key={pr.pr_number} style={{ display: 'flex', flexDirection: 'row', justifyContent: 'space-between' }}>
-			<Link style={{ paddingRight: '5px' }}
+		<li key={pr.pr_number} style={{ marginBottom: '6px' }}>
+			<Link
 				component="button"
 				variant="body2"
+				color="inherit"
 				onClick={() => {
 					if (chrome.tabs) {
 						chrome.tabs.create({ url: `${pr.link}` })
@@ -31,25 +32,31 @@ export const PullRequest: FC<{ pr: basePullRequest }> = ({ pr }) => {
 						window.open(`${pr.link}`, "_blank")
 					}
 					return false;
-				}}>{pr.pr_number}</Link>
-			<div className="created-at">
-				<Tooltip title="Created At" placement="top-start">
-					<Create style={{ verticalAlign: 'middle' }} fontSize="small" color="action" />
-				</Tooltip>
-				{pr.created_at ? createDate : ''}
-			</div>
-			<div className="update-at" style={{ flex: '1 0 50%' }}>
-				<Tooltip title="Updated At" placement="left">
-					<Update style={{ verticalAlign: 'middle' }} fontSize="small" />
-				</Tooltip>
-				{pr.update_at ? updateDate : ''}
-			</div>
-			<div className="comments">
-				<Badge badgeContent={pr.comments} color="primary">
-					<Tooltip title="Comments" placement="left">
-						<CommentIcon style={{ verticalAlign: 'middle' }} fontSize="small" color="action" />
+				}}
+				sx={{ display: 'block', textAlign: 'left', maxWidth: '100%', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}
+			>
+				<strong>#{pr.pr_number}</strong> {pr.title}
+			</Link>
+			<div style={{ display: 'flex', flexDirection: 'row', gap: '8px', color: 'inherit' }}>
+				<div className="created-at">
+					<Tooltip title="Created At" placement="top-start">
+						<Create style={{ verticalAlign: 'middle' }} fontSize="small" color="action" />
 					</Tooltip>
-				</Badge>
+					{pr.created_at ? createDate : ''}
+				</div>
+				<div className="update-at">
+					<Tooltip title="Updated At" placement="left">
+						<Update style={{ verticalAlign: 'middle' }} fontSize="small" />
+					</Tooltip>
+					{pr.update_at ? updateDate : ''}
+				</div>
+				<div className="comments">
+					<Badge badgeContent={pr.comments} color="primary">
+						<Tooltip title="Comments" placement="left">
+							<CommentIcon style={{ verticalAlign: 'middle' }} fontSize="small" color="action" />
+						</Tooltip>
+					</Badge>
+				</div>
 			</div>
 		</li>
 	);

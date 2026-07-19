@@ -1,13 +1,5 @@
 @import url('https://fonts.googleapis.com/css2?family=Poppins:wght@100;300;400;500;700&display=swap');
 
-:root {
-	--main-bg-color: #A7A4BF;
-	--light-bg-shade: #FBF9F9;
-	--light-bg-accent: #9F92B0;
-	--dark-bg-accent: #8284AD;
-	--dark-bg-shade: #25358F;
-}
-
 * {
 	box-sizing: border-box;
 }
@@ -86,14 +78,6 @@ body {
 	max-height: 75px;
 }
 */
-
-.even {
-	background-color: var(--main-bg-color);
-}
-
-.odd {
-	color: var(--light-bg-shade);
-}
 
 /*
 .toolbar {
